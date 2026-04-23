@@ -9,33 +9,28 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 export const authAPI = {
   async signIn(email: string, password: string): Promise<{ user: any; error?: string }> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .single();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      if (error || !data) {
+      if (error || !data.user) {
         return { user: null, error: 'Email ou senha incorretos' };
       }
       
-      // Armazenar usuário no localStorage
-      localStorage.setItem('user', JSON.stringify(data));
-      
-      return { user: data };
+      return { user: data.user };
     } catch (error) {
       return { user: null, error: 'Erro ao fazer login' };
     }
   },
 
   async signOut(): Promise<void> {
-    localStorage.removeItem('user');
+    await supabase.auth.signOut();
   },
 
-  getCurrentUser(): any {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+  async getCurrentSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
   }
 };
 
